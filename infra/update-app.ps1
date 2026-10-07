@@ -23,6 +23,7 @@ DATABASE_URL=$($s.databaseUrl)
 DB_SSL=true
 DEVICE_API_KEY=$($s.deviceApiKey)
 DASHBOARD_TOKEN=$($s.dashboardToken)
+DASHBOARD_PUBLIC=true
 OFFLINE_AFTER_SEC=120
 "@ | Set-Content $envFile -Encoding ascii -NoNewline
 

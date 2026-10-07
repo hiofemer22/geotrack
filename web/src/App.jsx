@@ -15,7 +15,12 @@ const TABS = [
 
 export default function App() {
   const [token, setTok] = useState(getToken());
-  if (!token) return <Login onLogin={(t) => { setToken(t); setTok(t); }} />;
+  const [isPublic, setIsPublic] = useState(null);   // null = consultando al servidor
+  useEffect(() => {
+    fetch('/api/config').then((r) => r.json()).then((c) => setIsPublic(!!c.public)).catch(() => setIsPublic(false));
+  }, []);
+  if (isPublic === null) return null;
+  if (!isPublic && !token) return <Login onLogin={(t) => { setToken(t); setTok(t); }} />;
   return <Dashboard />;
 }
 

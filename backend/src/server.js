@@ -13,6 +13,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8080);
 const DEVICE_API_KEY = process.env.DEVICE_API_KEY || 'dev-device-key';
 const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || 'dev-dashboard-token';
+// Dashboard abierto: cualquiera con la URL ve el panel sin token
+const DASHBOARD_PUBLIC = process.env.DASHBOARD_PUBLIC === 'true';
 const OFFLINE_AFTER_SEC = Number(process.env.OFFLINE_AFTER_SEC || 120);
 const LOW_BATTERY = 15;
 
@@ -28,13 +30,16 @@ const requireDevice = (req, res, next) =>
   req.get('x-api-key') === DEVICE_API_KEY ? next() : res.status(401).json({ error: 'unauthorized' });
 
 const requireDashboard = (req, res, next) => {
+  if (DASHBOARD_PUBLIC) return next();
   const token = (req.get('authorization') || '').replace(/^Bearer /, '') || req.query.token;
   return token === DASHBOARD_TOKEN ? next() : res.status(401).json({ error: 'unauthorized' });
 };
 
 io.use((socket, next) =>
-  socket.handshake.auth?.token === DASHBOARD_TOKEN ? next() : next(new Error('unauthorized')),
+  DASHBOARD_PUBLIC || socket.handshake.auth?.token === DASHBOARD_TOKEN ? next() : next(new Error('unauthorized')),
 );
+
+app.get('/api/config', (_req, res) => res.json({ public: DASHBOARD_PUBLIC }));
 
 const wrap = (fn) => (req, res, next) => fn(req, res, next).catch(next);
 
