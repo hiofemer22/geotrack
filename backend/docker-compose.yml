@@ -1,0 +1,14 @@
+# Base de datos local para desarrollo: docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: geotrack
+      POSTGRES_PASSWORD: geotrack
+      POSTGRES_DB: geotrack
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

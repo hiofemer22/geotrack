@@ -1,0 +1,19 @@
+node_modules/
+.env
+dist/
+*.log
+.dart_tool/
+build/
+.idea/
+*.iml
+.flutter-plugins*
+local.properties
+*.pem
+.pgdata/
+.deploy.json
+infra/*.pem
+*accessKeys*.csv
+*credentials*.csv
+
+# Dashboard compilado (lo genera "npm run build" en web/)
+backend/public/

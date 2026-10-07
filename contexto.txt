@@ -1,0 +1,38 @@
+Actúa como un Desarrollador de Software Senior, Arquitecto Cloud y un Agente de Inteligencia Artificial Autónomo. Tu objetivo es desarrollar, configurar y entregar un proyecto funcional y completo desde cero, actuando como mi equipo de desarrollo técnico.
+
+El proyecto es un sistema integral de geolocalización en tiempo real, compuesto por una app móvil, un backend en AWS y una plataforma web.
+
+DIRECTRIZ ESTRICTA DE DISEÑO (UI/UX):
+Ambas interfaces (móvil y web) deben tener un diseño visual moderno, minimalista y altamente profesional, fuertemente inspirado en la estética de Google Maps. Prioriza interfaces limpias, elementos superpuestos discretos (botones flotantes, tarjetas translúcidas), tipografía clara y paletas de colores neutras, asegurando que se perciba como una herramienta corporativa de alto nivel.
+
+FASE 1: CONFIGURACIÓN DEL ENTORNO LOCAL Y DESPLIEGUE EN DISPOSITIVO FÍSICO
+Guíame paso a paso para instalar todas las herramientas necesarias en mi computadora para desarrollar, compilar y probar este proyecto en mi teléfono móvil. Asume que empiezo desde cero.
+- Indícame qué instalar (Flutter, SDKs, Node/Python, etc.).
+- Explícame cómo configurar las variables de entorno.
+- Dame instrucciones precisas para conectar mi teléfono a la computadora (modo desarrollador, depuración USB) y el comando exacto para que la aplicación se instale y corra en mi dispositivo físico.
+
+FASE 2: CONFIGURACIÓN DE LA NUBE (AWS)
+Posteriormente, te proporcionaré las credenciales de mi cuenta de AWS. Deberás:
+- Indicarme qué servicios exactos usaremos para el backend, la base de datos y la conexión en tiempo real (ej. EC2, RDS, API Gateway, WebSockets).
+- Proveerme los scripts o comandos necesarios (o guiarme paso a paso en la consola) para desplegar el servidor y la base de datos.
+
+FASE 3: DESARROLLO DE LA APLICACIÓN MÓVIL (El Rastreador)
+Desarrolla el código completo de la app móvil con lo siguiente:
+- Interfaz principal: Un mapa interactivo a pantalla completa y un botón flotante de "Iniciar/Detener" rastreo con diseño minimalista.
+- Rastreo Persistente en Segundo Plano (Crítico): Al iniciar, debe capturar la ubicación cada 5 a 10 segundos ininterrumpidamente, incluso si la app se cierra por completo o el teléfono se bloquea. Utiliza librerías nativas o paquetes robustos que eviten que el sistema operativo "mate" el proceso.
+- Persistencia y Sincronización: Si se pierde la conexión a internet, los datos deben guardarse localmente. Al recuperarla, el sistema debe vaciar la cola y enviar todos los datos acumulados al servidor en AWS.
+- Historial On-Device: El usuario debe poder consultar sus sesiones anteriores, ver la ruta dibujada y asignarles nombres personalizados.
+- Telemetría en Tiempo Real: Calcula la velocidad de desplazamiento y estima las calorías consumidas, diferenciando algorítmicamente entre caminata estándar o alta velocidad.
+
+FASE 4: DESARROLLO DE LA PLATAFORMA WEB (Centro de Monitoreo)
+Desarrolla el código del dashboard web:
+- Panel en Vivo: Un mapa de vista amplia (estilo pantalla completa) que muestre simultáneamente todos los dispositivos conectados con rastreo activo.
+- Trazado en Tiempo Real: Dibuja las rutas en vivo a medida que se mueven, asignando un color distintivo a cada dispositivo. El panel superpuesto debe identificar claramente qué dispositivo es cada uno.
+- Consultas Históricas: Módulo de búsqueda avanzada limpio y moderno (filtrado por dispositivo, fecha y horas).
+- Reproductor de Rutas (Playback): Al consultar el historial (ej. 24 horas de un dispositivo), incluye un botón "Play" para simular el recorrido en el mapa, con controles minimalistas para acelerar la reproducción (x10, x20, x30).
+
+FASE 5: INNOVACIÓN Y MEJORAS
+Propón e implementa al menos 3 funcionalidades adicionales que consideres valiosas, creativas o que hagan este sistema mucho más robusto a nivel empresarial.
+
+Instrucciones de Ejecución para la IA:
+No me des explicaciones teóricas genéricas ni fragmentos sueltos. Estructura el proyecto, indícame cómo organizar las carpetas, qué comandos ejecutar para inicializar los repositorios y entrégame el código completo y ensamblado para que el sistema funcione de extremo a extremo. Empieza preguntándome si estoy listo para iniciar la Fase 1.
