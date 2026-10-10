@@ -78,6 +78,11 @@ export default function MapView({ mode, devices, trails, geofences, draftFence, 
                 <Polyline positions={trail.map((p) => [p.lat, p.lng])} pathOptions={{ color: d.color, weight: 4.5, opacity: 0.95 }} />
               </>
             )}
+            {live && trail.at(-1)?.accuracy > 0 && (
+              // Margen de error del GPS en la última lectura (como el círculo azul de Google Maps)
+              <Circle center={[d.last_lat, d.last_lng]} radius={trail.at(-1).accuracy} interactive={false}
+                pathOptions={{ color: d.color, weight: 1, opacity: 0.4, fillOpacity: 0.12 }} />
+            )}
             {d.last_lat != null && (
               <Marker position={[d.last_lat, d.last_lng]} icon={deviceIcon(d.color, { pulse: live, dim: !d.tracking })}>
                 <Tooltip permanent direction="top" offset={[0, -12]} className="dev-label">

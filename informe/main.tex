@@ -1,0 +1,1128 @@
+\documentclass[11pt]{article}
+
+% ── Paquetes ────────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{fontawesome5}
+\usepackage{listings}
+\usepackage{float}
+\usepackage[most]{tcolorbox}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{parskip}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{enumitem}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,shapes.misc,shapes.multipart,fit,backgrounds,calc,shadows,decorations.pathreplacing}
+
+% ── Rutas de imágenes ───────────────────────────────────────────────────────
+\graphicspath{{./}{images/}}
+
+% ── Colores ─────────────────────────────────────────────────────────────────
+\definecolor{htmlblue}{RGB}{41, 128, 185}
+\definecolor{htmlgreen}{RGB}{39, 174, 96}
+\definecolor{codebg}{RGB}{248, 249, 250}
+\definecolor{grayborder}{RGB}{220, 220, 220}
+\definecolor{qcolor}{RGB}{56, 142, 60}
+\definecolor{ccolor}{RGB}{25, 118, 210}
+\definecolor{gblue}{RGB}{26, 115, 232}
+\definecolor{gred}{RGB}{217, 48, 37}
+\definecolor{gyellow}{RGB}{249, 171, 0}
+\definecolor{ggreen}{RGB}{30, 142, 62}
+\definecolor{awsorange}{RGB}{255, 153, 0}
+\definecolor{inkgray}{RGB}{60, 64, 67}
+\definecolor{softgray}{RGB}{241, 243, 244}
+\definecolor{mapbg}{RGB}{232, 240, 233}
+\definecolor{purple}{RGB}{142, 36, 170}
+
+% ── Listings ────────────────────────────────────────────────────────────────
+\lstset{
+    language=Java,
+    basicstyle=\ttfamily\footnotesize,
+    backgroundcolor=\color{codebg},
+    keywordstyle=\color{blue}\bfseries,
+    stringstyle=\color{orange},
+    commentstyle=\color{gray}\itshape,
+    showstringspaces=false,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    frame=lines,
+    framesep=5pt,
+    rulecolor=\color{grayborder},
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1 {²}{{$^2$}}1
+}
+
+% ── Entornos personalizados ─────────────────────────────────────────────────
+\newcounter{countActividad}
+\newenvironment{actividad}[1]{%
+    \stepcounter{countActividad}
+    \vspace{1.5em}
+    \noindent{\large\color{htmlblue}\faCode\ \textbf{Actividad \ifnum\value{countActividad}<10 0\fi\thecountActividad: #1}}
+    \par\medskip
+}{%
+    \vspace{1em}\hrule\vspace{1em}
+}
+
+% Tarjeta de indicador (KPI)
+\newcommand{\kpi}[4]{%
+  \begin{tcolorbox}[enhanced, colback=white, colframe=#1, boxrule=0pt, leftrule=3pt,
+    arc=2pt, width=\linewidth, left=6pt, right=4pt, top=4pt, bottom=4pt,
+    drop fuzzy shadow=black!25]
+    {\color{#1}\Large #2}\hfill{\LARGE\bfseries\color{inkgray}#3}\\[1pt]
+    {\footnotesize\color{gray}#4}
+  \end{tcolorbox}}
+
+% Cajas de nota / idea clave
+\newtcolorbox{nota}[1][Nota]{enhanced, colback=htmlblue!5, colframe=htmlblue, boxrule=0.6pt, arc=3pt,
+  fonttitle=\bfseries, coltitle=white, colbacktitle=htmlblue, title={\faInfoCircle\ #1}}
+\newtcolorbox{clave}[1][Idea clave]{enhanced, colback=htmlgreen!6, colframe=htmlgreen, boxrule=0.6pt, arc=3pt,
+  fonttitle=\bfseries, coltitle=white, colbacktitle=htmlgreen, title={\faLightbulb\ #1}}
+\newtcolorbox{alerta}[1][Atención]{enhanced, colback=gred!5, colframe=gred, boxrule=0.6pt, arc=3pt,
+  fonttitle=\bfseries, coltitle=white, colbacktitle=gred, title={\faExclamationTriangle\ #1}}
+
+% Estilos TikZ comunes
+\tikzset{
+  box/.style={draw=#1, fill=#1!8, rounded corners=4pt, thick, align=center, font=\small,
+    minimum height=1.0cm, inner sep=5pt, drop shadow={opacity=0.15}},
+  box/.default=gblue,
+  sbox/.style={draw=#1, fill=white, rounded corners=3pt, align=center, font=\footnotesize,
+    minimum height=0.75cm, inner sep=4pt},
+  sbox/.default=gray,
+  group/.style={draw=#1, dashed, rounded corners=8pt, thick, inner sep=10pt},
+  arr/.style={-{Stealth[length=2.6mm]}, thick, color=inkgray},
+  darr/.style={{Stealth[length=2.6mm]}-{Stealth[length=2.6mm]}, thick, color=inkgray},
+  lbl/.style={font=\scriptsize, fill=white, inner sep=1.5pt, text=inkgray, align=center},
+  decision/.style={diamond, aspect=2.2, draw=gyellow!90!black, fill=gyellow!12, thick, align=center,
+    font=\footnotesize, inner sep=1pt},
+}
+
+% Entidad de diagrama ER: {color}{nombre}{campos separados por \\}
+\newcommand{\entidad}[3]{%
+  \begin{tabular}{@{}l@{}}
+    \colorbox{#1!18}{\makebox[3.3cm][l]{\textbf{#2}}}\\[1pt]
+    \begin{tabular}{@{\hspace{4pt}}l@{\hspace{4pt}}}#3\end{tabular}
+  \end{tabular}}
+
+% Captura real si existe en images/, si no un esquema dibujado
+\newcommand{\capturaO}[3]{\IfFileExists{images/#1}{\includegraphics[width=#2]{#1}}{#3}}
+
+% ── Márgenes y encabezados ──────────────────────────────────────────────────
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{gray}{GeoTrack — Aplicativo de rastreo espacial}}
+\fancyhead[R]{\small\textcolor{gray}{UNSAAC 2026}}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+
+% ── Hipervínculos ───────────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks=true,
+    linkcolor=htmlblue,
+    citecolor=htmlgreen,
+    urlcolor=htmlblue,
+}
+
+\captionsetup{font=small, labelfont={bf,color=htmlblue}}
+\setlist{itemsep=2pt, topsep=4pt}
+
+% ════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ── Portada ─────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \begin{center}
+    \LARGE\textbf{UNIVERSIDAD NACIONAL SAN ANTONIO ABAD DEL CUSCO}\\[0.4cm]
+    \Large\textsc{Facultad de Ingeniería Eléctrica, Electrónica, Informática y Mecánica}\\[0.2cm]
+    \large\textsc{Escuela Profesional de Ingeniería Informática y de Sistemas}
+  \end{center}
+  \vspace{0.8cm}
+  \begin{center}
+    \includegraphics[width=13cm]{logosU.png}
+  \end{center}
+  \vspace{0.8cm}
+  \begin{center}
+    {\huge \textbf{Informe proyecto}}\\[0.4cm]
+    {\LARGE \textbf{Aplicativo de rastreo espacial}}
+  \end{center}
+  \noindent\rule{\linewidth}{0.6pt}
+
+  \vspace{1cm}
+  \noindent\textbf{Curso:} Sistemas Embebidos\\[0.2cm]
+  \textbf{Docente:} Jose Mauro Pillco Quispe\\[0.2cm]
+  \textbf{Estudiante:}  Mogrovejo Ccorimanya Luis Angel (220961)
+  \vfill
+  \begin{center}
+    {\Large \textsc{Cusco — Perú}}\\[0.3cm]
+    {\Large \textsc{2026}}
+  \end{center}
+\end{titlepage}
+
+% ── Contenido ───────────────────────────────────────────────────────────────
+
+% ── Resumen ejecutivo ───────────────────────────────────────────────────────
+\section*{Resumen ejecutivo}
+\addcontentsline{toc}{section}{Resumen ejecutivo}
+
+\textbf{GeoTrack} es un sistema integral de geolocalización en tiempo real compuesto por tres piezas que
+trabajan juntas: una \textbf{aplicación móvil Android} (Flutter) que actúa como rastreador, un
+\textbf{backend en la nube de AWS} (Node.js, Socket.IO y PostgreSQL) que recibe, almacena y retransmite las
+posiciones, y un \textbf{centro de monitoreo web} (React y Leaflet) que muestra en vivo todos los
+dispositivos, su historial y la reproducción animada de sus recorridos.
+
+El teléfono funciona como un \emph{sistema embebido}: un sensor (receptor GNSS), un proceso residente que
+sobrevive al cierre de la aplicación y al bloqueo de pantalla, almacenamiento local para operar sin
+conexión, y un canal de comunicación que sincroniza con el servidor cuando hay red. Sobre las lecturas
+crudas del GPS se implementó un \textbf{filtro de precisión} (validación por exactitud y por velocidad
+física, filtro de Kalman con predicción por velocidad y rumbo, y fijación de posición estando quieto) que
+eliminó los ``saltos'' a otros lugares y redujo un 80\,\% el movimiento falso con el usuario detenido.
+
+\vspace{0.3cm}
+\noindent
+\begin{minipage}[t]{0.32\linewidth}\kpi{gblue}{\faMobile*}{1 s}{intervalo mínimo de captura}\end{minipage}\hfill
+\begin{minipage}[t]{0.32\linewidth}\kpi{ggreen}{\faMapMarker*}{50\,785}{posiciones registradas en campo}\end{minipage}\hfill
+\begin{minipage}[t]{0.32\linewidth}\kpi{gred}{\faRoute}{21}{sesiones de rastreo reales}\end{minipage}
+
+\noindent
+\begin{minipage}[t]{0.32\linewidth}\kpi{awsorange}{\faCloud}{2}{servicios AWS (EC2 + RDS)}\end{minipage}\hfill
+\begin{minipage}[t]{0.32\linewidth}\kpi{purple}{\faCode}{3\,900}{líneas de código propio}\end{minipage}\hfill
+\begin{minipage}[t]{0.32\linewidth}\kpi{gyellow!90!black}{\faChartLine}{$-80$\,\%}{deriva falsa estando quieto}\end{minipage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Introducción}
+
+\subsection{Problema}
+Rastrear la posición de personas o vehículos de forma continua es una necesidad común en logística,
+seguridad personal, deporte y supervisión de personal en campo. Las soluciones comerciales suelen ser
+cerradas, costosas o dependientes de una conexión permanente. Además, un teléfono móvil impone
+restricciones propias de un sistema embebido: batería limitada, un sistema operativo que \emph{mata}
+procesos en segundo plano para ahorrar energía, conectividad intermitente y un sensor GNSS cuya precisión
+varía entre 3 y más de 100 metros según el entorno.
+
+\subsection{Objetivo general}
+Desarrollar y desplegar un sistema de geolocalización en tiempo real, de extremo a extremo, compuesto por
+una aplicación móvil rastreadora, un backend en la nube y una plataforma web de monitoreo, con una
+interfaz moderna inspirada en Google Maps.
+
+\subsection{Objetivos específicos}
+\begin{enumerate}
+  \item Capturar la ubicación de forma persistente en segundo plano (intervalo configurable de 1 a 10\,s),
+        incluso con la aplicación cerrada o el teléfono bloqueado.
+  \item Garantizar que ningún dato se pierda sin conexión mediante una arquitectura \emph{offline-first}.
+  \item Calcular telemetría en el dispositivo: velocidad, distancia, tipo de actividad y calorías.
+  \item Visualizar en vivo múltiples dispositivos, consultar su historial y reproducir sus recorridos.
+  \item Desplegar la solución en AWS con infraestructura reproducible mediante scripts.
+  \item Mejorar la calidad de la señal GNSS mediante filtrado y suavizado de las lecturas.
+\end{enumerate}
+
+\subsection{Alcance}
+El sistema se organizó en cinco fases: (1) entorno local y despliegue en un dispositivo físico,
+(2) infraestructura en AWS, (3) aplicación móvil, (4) plataforma web y (5) innovaciones adicionales.
+La aplicación se probó en un Samsung Galaxy A26 real, en la ciudad del Cusco.
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Requerimientos}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\bfseries}l X >{\centering\arraybackslash}p{1.6cm}}
+\toprule
+\textbf{ID} & \textbf{Requerimiento funcional} & \textbf{Estado} \\
+\midrule
+RF-01 & Mapa a pantalla completa con botón flotante \emph{Iniciar/Detener} rastreo & \textcolor{ggreen}{\faCheckCircle} \\
+RF-02 & Rastreo persistente en segundo plano (app cerrada o pantalla bloqueada) & \textcolor{ggreen}{\faCheckCircle} \\
+RF-03 & Almacenamiento local sin conexión y envío de la cola al recuperar la red & \textcolor{ggreen}{\faCheckCircle} \\
+RF-04 & Historial en el dispositivo: sesiones, ruta dibujada y nombres personalizados & \textcolor{ggreen}{\faCheckCircle} \\
+RF-05 & Telemetría: velocidad, calorías y clasificación caminata / alta velocidad & \textcolor{ggreen}{\faCheckCircle} \\
+RF-06 & Panel web en vivo con todos los dispositivos activos y color distintivo & \textcolor{ggreen}{\faCheckCircle} \\
+RF-07 & Trazado de rutas en tiempo real & \textcolor{ggreen}{\faCheckCircle} \\
+RF-08 & Consultas históricas por dispositivo, fecha y hora & \textcolor{ggreen}{\faCheckCircle} \\
+RF-09 & Reproductor de rutas con velocidades x10, x20 y x30 (se añadió x1 y x60) & \textcolor{ggreen}{\faCheckCircle} \\
+RF-10 & Al menos tres funcionalidades innovadoras (se implementaron seis) & \textcolor{ggreen}{\faCheckCircle} \\
+\bottomrule
+\end{tabularx}
+\caption{Requerimientos funcionales y su cumplimiento.}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+\toprule
+\textbf{ID} & \textbf{Requerimiento no funcional} \\
+\midrule
+RNF-01 & Diseño moderno y minimalista inspirado en Google Maps (tarjetas flotantes, paleta neutra). \\
+RNF-02 & Tolerancia a fallos de red: cero pérdida de datos e idempotencia en el servidor. \\
+RNF-03 & Tiempo real: las posiciones aparecen en el panel en cuanto llegan al servidor (WebSockets). \\
+RNF-04 & Seguridad: autenticación de dispositivos, base de datos privada y cifrada, mínimo privilegio en red. \\
+RNF-05 & Despliegue reproducible: toda la infraestructura se crea, actualiza y destruye con scripts. \\
+RNF-06 & Eficiencia energética: un solo flujo de GPS y envío por lotes. \\
+\bottomrule
+\end{tabularx}
+\caption{Requerimientos no funcionales.}
+\end{table}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Arquitectura del sistema}
+
+La Figura~\ref{fig:arquitectura} muestra los tres componentes y cómo se comunican. El teléfono envía las
+posiciones por HTTP (REST) al servidor en AWS; el servidor las guarda en PostgreSQL y las retransmite al
+instante a todos los navegadores conectados mediante WebSockets (Socket.IO).
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[node distance=0.55cm and 1.2cm]
+  % Móvil
+  \node[box=gblue, minimum width=3.4cm] (ui) {\faMobile*\ \textbf{Interfaz}\\{\scriptsize mapa, historial, ajustes}};
+  \node[box=gblue, minimum width=3.4cm, below=of ui] (bg) {\faSatelliteDish\ \textbf{Servicio en 2.º plano}\\{\scriptsize GPS + filtro + telemetría}};
+  \node[box=gblue, minimum width=3.4cm, below=of bg] (sql) {\faDatabase\ \textbf{SQLite local}\\{\scriptsize puntos + cola (outbox)}};
+  \node[group=gblue, fit=(ui)(bg)(sql), label={[font=\small\bfseries, text=gblue]above:App móvil (Flutter)}] (mob) {};
+  \draw[darr] (ui) -- (bg);
+  \draw[darr] (bg) -- (sql);
+
+  % AWS
+  \node[box=awsorange, minimum width=3.6cm, right=2.2cm of ui] (ngx) {\faServer\ \textbf{Nginx}\\{\scriptsize proxy inverso :80}};
+  \node[box=awsorange, minimum width=3.6cm, below=of ngx] (api) {\faCode\ \textbf{API Node.js}\\{\scriptsize Express + Socket.IO}};
+  \node[box=awsorange, minimum width=3.6cm, below=of api] (rds) {\faDatabase\ \textbf{RDS PostgreSQL 16}\\{\scriptsize privada y cifrada}};
+  \node[group=awsorange, fit=(ngx)(api)(rds), label={[font=\small\bfseries, text=awsorange!80!black]above:Nube AWS (us-east-1)}] (aws) {};
+  \draw[arr] (ngx) -- (api);
+  \draw[darr] (api) -- node[lbl, right]{SQL / TLS} (rds);
+
+  % Web
+  \node[box=ggreen, minimum width=3.2cm, right=2.2cm of ngx] (dash) {\faDesktop\ \textbf{Dashboard}\\{\scriptsize React + Leaflet}};
+  \node[box=ggreen, minimum width=3.2cm, below=of dash] (live) {\faBroadcastTower\ \textbf{Panel en vivo}\\{\scriptsize rutas y alertas}};
+  \node[box=ggreen, minimum width=3.2cm, below=of live] (hist) {\faHistory\ \textbf{Historial}\\{\scriptsize consultas y playback}};
+  \node[group=ggreen, fit=(dash)(live)(hist), label={[font=\small\bfseries, text=ggreen]above:Centro de monitoreo}] (web) {};
+
+  % Enlaces
+  \draw[arr] (bg.east) -- node[lbl, below=2pt]{HTTP REST\\\texttt{x-api-key}} (api.west);
+  \draw[darr] (ngx.east) -- node[lbl, above=2pt]{WebSocket} (dash.west);
+  \draw[arr, dashed] (api.east) -- node[lbl, below=2pt]{eventos} (live.west);
+
+  % Teselas
+  \node[sbox=gray, below=1.1cm of rds, minimum width=4cm] (osm) {\faGlobe\ Teselas de mapa (OpenStreetMap)};
+  \draw[arr, dotted] (osm.west) -| (sql.south);
+  \draw[arr, dotted] (osm.east) -| (hist.south);
+\end{tikzpicture}
+\caption{Arquitectura general de GeoTrack.}
+\label{fig:arquitectura}
+\end{figure}
+
+\subsection{Tecnologías utilizadas}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{l l X}
+\toprule
+\textbf{Capa} & \textbf{Tecnología} & \textbf{Por qué se eligió} \\
+\midrule
+\multirow{5}{*}{\textcolor{gblue}{\faMobile*}\ Móvil}
+  & Flutter 3 / Dart & Un solo código, compilación nativa (AOT) y alto rendimiento gráfico. \\
+  & \texttt{flutter\_background\_service} & Servicio en primer plano de Android en un \emph{isolate} propio. \\
+  & \texttt{geolocator} & Acceso al proveedor de ubicación fusionado de Android (GNSS + Wi-Fi + celdas). \\
+  & \texttt{sqflite} & Base de datos SQLite para operar sin conexión. \\
+  & \texttt{flutter\_map} & Mapa vectorial/teselas sin depender de claves de pago. \\
+\midrule
+\multirow{3}{*}{\textcolor{awsorange}{\faServer}\ Backend}
+  & Node.js + Express & API REST ligera y asíncrona. \\
+  & Socket.IO & WebSockets con reconexión automática para el tiempo real. \\
+  & PostgreSQL 16 & Integridad, índices por tiempo y restricción \texttt{UNIQUE} para idempotencia. \\
+\midrule
+\multirow{2}{*}{\textcolor{ggreen}{\faDesktop}\ Web}
+  & React 18 + Vite & Interfaz reactiva y compilación rápida. \\
+  & Leaflet / React-Leaflet & Mapas interactivos con polilíneas, círculos y marcadores. \\
+\midrule
+\multirow{2}{*}{\textcolor{awsorange!80!black}{\faCloud}\ Nube}
+  & AWS EC2 + RDS & Servidor con conexiones persistentes y base de datos gestionada con backups. \\
+  & AWS CLI + PowerShell & Infraestructura reproducible por scripts. \\
+\bottomrule
+\end{tabularx}
+\caption{Pila tecnológica.}
+\end{table}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Infraestructura en la nube (AWS)}
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[node distance=0.8cm and 1.3cm]
+  \node[box=gblue, minimum width=2.6cm] (phone) {\faMobile*\ Teléfonos};
+  \node[box=ggreen, below=0.5cm of phone, minimum width=2.6cm] (browser) {\faDesktop\ Navegadores};
+  \node[box=purple, below=0.5cm of browser, minimum width=2.6cm] (admin) {\faLaptop\ PC administrador\\{\scriptsize scripts PowerShell}};
+  \node[box=inkgray, right=1.0cm of browser, minimum width=2.0cm] (inet) {\faGlobe\\\textbf{Internet}};
+
+  \node[box=awsorange, right=1.9cm of inet, yshift=1.3cm, minimum width=3.4cm] (eip) {\textbf{IP elástica}\\{\scriptsize dirección fija}};
+  \node[box=awsorange, below=of eip, minimum width=3.4cm] (ec2) {\faServer\ \textbf{EC2 t3.small}\\{\scriptsize Amazon Linux 2023}\\{\scriptsize Nginx + Node.js (systemd)}};
+  \node[box=awsorange, below=1.4cm of ec2, minimum width=3.4cm] (rds) {\faDatabase\ \textbf{RDS db.t4g.micro}\\{\scriptsize PostgreSQL 16, 20 GB}\\{\scriptsize cifrada, backups 7 días}};
+
+  \node[group=gblue, fit=(ec2), inner sep=6pt, label={[font=\scriptsize, text=gblue]right:\begin{tabular}{l}\textbf{SG-API}\\TCP 80 \faArrowLeft\ todos\\TCP 22 \faArrowLeft\ IP admin\end{tabular}}] (sgapi) {};
+  \node[group=gred, fit=(rds), inner sep=6pt, label={[font=\scriptsize, text=gred]right:\begin{tabular}{l}\textbf{SG-DB}\\TCP 5432 \faArrowLeft\ solo SG-API\end{tabular}}] (sgdb) {};
+  \node[group=awsorange, fit=(eip)(sgapi)(sgdb), inner sep=14pt, label={[font=\small\bfseries, text=awsorange!80!black]above:VPC (us-east-1)}] (vpc) {};
+
+  \draw[arr] (phone.east) -- (inet);
+  \draw[darr] (browser) -- (inet);
+  \draw[arr, purple, dashed] (admin.east) -- node[lbl, below right=0pt]{SSH :22} (inet);
+  \draw[darr] (inet) -- node[lbl, above left=0pt]{HTTP :80} (eip.west);
+  \draw[arr] (eip) -- (ec2);
+  \draw[darr] (ec2) -- node[lbl, right]{TLS :5432} (rds);
+\end{tikzpicture}
+\caption{Despliegue en AWS con segmentación de red por Security Groups.}
+\label{fig:aws}
+\end{figure}
+
+\begin{clave}[Decisión de diseño: EC2 en lugar de API Gateway + Lambda]
+Socket.IO necesita \textbf{conexiones persistentes} con cada navegador. Un servidor EC2 detrás de Nginx las
+mantiene de forma natural, con un costo predecible y una arquitectura simple de operar. La base de datos se
+dejó en RDS para delegar en AWS los backups, los parches y el cifrado.
+\end{clave}
+
+\subsection{Seguridad de la red}
+\begin{itemize}
+  \item \textbf{Mínimo privilegio:} la base de datos no tiene IP pública; solo acepta conexiones desde el
+        Security Group de la API.
+  \item \textbf{SSH restringido} a la IP pública del administrador (regla \texttt{/32}).
+  \item \textbf{Cifrado en reposo} del almacenamiento de RDS y conexión TLS entre la API y la base de datos.
+  \item \textbf{Secretos fuera del repositorio:} token del panel, API key de dispositivos y URL de la base de
+        datos se guardan en \texttt{infra/.deploy.json}, ignorado por git.
+\end{itemize}
+
+\subsection{Costo estimado}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{l l r}
+\toprule
+\textbf{Recurso} & \textbf{Tipo} & \textbf{US\$/mes} \\
+\midrule
+EC2 & t3.small (2 vCPU, 2 GB) & $\approx 15$ \\
+RDS PostgreSQL & db.t4g.micro + 20 GB gp2 & $\approx 13$ \\
+Almacenamiento, IP elástica y transferencia & — & $\approx 2$ \\
+\midrule
+\textbf{Total} & & $\boldsymbol{\approx 30}$ \\
+\bottomrule
+\end{tabular}
+\caption{Costo mensual aproximado (puede ser menor dentro de la capa gratuita).}
+\end{table}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Aplicación móvil: el rastreador}
+
+\subsection{Organización del código}
+
+La aplicación separa la interfaz del trabajo pesado. El rastreo vive en un \emph{isolate} independiente
+(un hilo de Dart con memoria propia) dentro de un \textbf{servicio en primer plano} de Android, de modo que
+cerrar la interfaz no detiene la captura.
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[node distance=0.35cm and 0.5cm]
+  % UI
+  \node[sbox=gblue, minimum width=2.6cm] (home) {\texttt{home\_screen}\\{\tiny mapa + FAB + SOS}};
+  \node[sbox=gblue, minimum width=2.6cm, below=of home] (histo) {\texttt{history\_screen}\\{\tiny sesiones}};
+  \node[sbox=gblue, minimum width=2.6cm, below=of histo] (det) {\texttt{session\_detail}\\{\tiny ruta + renombrar}};
+  \node[sbox=gblue, minimum width=2.6cm, below=of det] (set) {\texttt{settings\_screen}\\{\tiny servidor, peso, intervalo}};
+  \node[group=gblue, fit=(home)(set), label={[font=\small\bfseries, text=gblue]above:Isolate de interfaz}] (uig) {};
+
+  % Background
+  \node[sbox=ggreen, minimum width=3.0cm, right=2.4cm of home] (trk) {\texttt{tracking\_service}\\{\tiny GPS, watchdog, notificación}};
+  \node[sbox=ggreen, minimum width=3.0cm, below=of trk] (flt) {\texttt{location\_filter}\\{\tiny precisión + Kalman}};
+  \node[sbox=ggreen, minimum width=3.0cm, below=of flt] (tel) {\texttt{telemetry}\\{\tiny velocidad, actividad, kcal}};
+  \node[sbox=ggreen, minimum width=3.0cm, below=of tel] (syn) {\texttt{sync\_service}\\{\tiny cola \faArrowRight\ servidor}};
+  \node[group=ggreen, fit=(trk)(syn), label={[font=\small\bfseries, text=ggreen]above:Isolate en segundo plano}] (bgg) {};
+
+  % Data
+  \node[sbox=purple, minimum width=2.6cm, right=2.0cm of flt] (db) {\texttt{local\_db}\\{\tiny SQLite}};
+  \node[sbox=purple, minimum width=2.6cm, below=of db] (cfg) {\texttt{config}\\{\tiny SharedPreferences}};
+  \node[group=purple, fit=(db)(cfg), label={[font=\small\bfseries, text=purple]above:Datos}] (dg) {};
+
+  \draw[darr] (uig.east |- trk) -- node[lbl, above]{\texttt{invoke('update')}\\\texttt{on('sos')}} (bgg.west |- trk);
+  \draw[darr] (bgg.east |- db) -- (dg.west |- db);
+  \draw[darr, dashed] (uig.south) |- ++(0,-0.6) -| node[lbl, pos=0.25]{lectura de historial y ajustes} (dg.south);
+\end{tikzpicture}
+\caption{Módulos de la app y comunicación entre isolates.}
+\end{figure}
+
+\subsection{Rastreo persistente en segundo plano}
+Android cierra agresivamente los procesos en segundo plano, y más aún los fabricantes como Samsung. Para
+evitarlo se combinaron varias técnicas:
+\begin{itemize}
+  \item \textbf{Servicio en primer plano} con \texttt{foregroundServiceType="location"} y notificación
+        permanente que muestra velocidad, distancia, calorías y puntos en cola.
+  \item \texttt{stopWithTask=false}: el servicio sigue vivo aunque se deslice la app fuera de recientes.
+  \item \texttt{autoStartOnBoot}: si el teléfono se reinicia con una sesión activa, el rastreo se reanuda.
+  \item Permiso de ubicación \emph{``Permitir todo el tiempo''} y exclusión de la optimización de batería.
+  \item \textbf{Watchdog} cada 30\,s: si el flujo de GPS deja de entregar posiciones (algunos fabricantes lo
+        pausan), fuerza una lectura y reinicia el flujo.
+\end{itemize}
+
+\subsection{Arquitectura \emph{offline-first} y sincronización}
+
+Cada posición se guarda \textbf{primero en SQLite} y solo después se intenta enviar. Las operaciones que no
+son puntos (iniciar/detener sesión, renombrar, SOS) van a una tabla \texttt{outbox} y se envían en orden.
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[x=1cm, y=-0.72cm, font=\footnotesize]
+  \foreach \x/\n/\c/\i in {0/GPS/gblue/\faSatelliteDish, 3.2/App (2.º plano)/ggreen/\faCogs, 6.6/SQLite/purple/\faDatabase, 10.2/Servidor AWS/awsorange/\faServer, 13.4/Dashboard/ggreen/\faDesktop}{
+    \node[box=\c, minimum width=2.4cm, minimum height=0.8cm] at (\x,0) {\i\ \textbf{\n}};
+    \draw[gray!60, dashed] (\x,0.7) -- (\x,13.6);
+  }
+  \draw[arr] (0,1.4) -- node[lbl, above]{posición cada 1 s} (3.2,1.4);
+  \draw[arr] (3.2,2.4) -- node[lbl, above]{\texttt{INSERT points (synced=0)}} (6.6,2.4);
+  \node[lbl, fill=gred!10, draw=gred, rounded corners=2pt] at (8.4,3.6) {\faWifi\ sin red: el envío falla, los datos esperan};
+  \draw[arr, gred] (3.2,4.8) -- node[lbl, above]{POST /api/locations} (9.7,4.8);
+  \node[gred, font=\Large] at (9.9,4.8) {\faTimes};
+  \draw[arr] (0,5.9) -- node[lbl, above]{posición} (3.2,5.9);
+  \draw[arr] (3.2,6.6) -- node[lbl, above]{más puntos en cola} (6.6,6.6);
+  \node[lbl, fill=ggreen!10, draw=ggreen, rounded corners=2pt] at (8.4,7.9) {\faWifi\ vuelve la red};
+  \draw[arr] (6.6,9.0) -- node[lbl, above]{lote de hasta 500 puntos} (3.2,9.0);
+  \draw[arr, ggreen] (3.2,10.0) -- node[lbl, above]{POST /api/locations} (10.2,10.0);
+  \draw[arr] (10.2,10.0) -- ++(0.7,0) |- (10.2,10.8);
+  \node[lbl, anchor=west, font=\tiny\ttfamily, align=left] at (11.0,10.4) {ON CONFLICT\\DO NOTHING};
+  \draw[arr, dashed] (10.2,11.5) -- node[lbl, above]{\texttt{200 OK}} (3.2,11.5);
+  \draw[arr] (3.2,12.3) -- node[lbl, above]{\texttt{synced = 1}} (6.6,12.3);
+  \draw[arr] (10.2,12.8) -- node[lbl, above]{\texttt{emit('locations')}} (13.4,12.8);
+\end{tikzpicture}
+\caption{Diagrama de secuencia: corte de red y recuperación sin pérdida de datos.}
+\label{fig:sync}
+\end{figure}
+
+\begin{clave}[Idempotencia]
+La tabla \texttt{locations} tiene la restricción \texttt{UNIQUE(device\_id, ts)} y la inserción usa
+\texttt{ON CONFLICT DO NOTHING}. Si un lote llega dos veces (por ejemplo, el servidor lo guardó pero la
+respuesta se perdió por un corte de red), los puntos repetidos se ignoran: los reintentos nunca duplican
+datos.
+\end{clave}
+
+\begin{lstlisting}[language=SQL, caption={Inserción idempotente de un lote de posiciones.}]
+INSERT INTO locations (device_id, session_id, ts, lat, lng, speed, accuracy, ...)
+VALUES ($1, $2, $3, ...), ($12, $13, $14, ...), ...
+ON CONFLICT (device_id, ts) DO NOTHING
+RETURNING *;
+\end{lstlisting}
+
+\subsection{Filtro de precisión de la señal GNSS}
+
+Durante las pruebas de campo se observó que la ruta ``saltaba'' a otros lugares. El análisis de
+\textbf{24\,351 posiciones reales} mostró que todos esos saltos coincidían con lecturas que el propio
+teléfono reportaba con un margen de error de 74 a 800\,m: ubicaciones aproximadas por Wi-Fi o antenas
+celulares, no por satélite. La Figura~\ref{fig:precision} muestra la distribución.
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, bar shift=0pt, width=\linewidth, height=6.2cm, bar width=0.9cm,
+  ylabel={\% de lecturas}, xlabel={Margen de error reportado por el GPS (m)},
+  symbolic x coords={0--5,5--10,10--15,15--20,20--25,25--40,40--100,>100},
+  xtick={0--5,5--10,10--15,15--20,20--25,25--40,40--100,>100}, ymin=0, ymax=62,
+  enlarge x limits=0.07,
+  nodes near coords={\pgfmathprintnumber[fixed,precision=1]{\pgfplotspointmeta}\%},
+  nodes near coords style={font=\scriptsize, text=inkgray},
+  every axis plot/.append style={draw=none},
+  axis lines*=left, ymajorgrids, grid style={gray!20},
+  tick label style={font=\footnotesize}, label style={font=\small},
+]
+\addplot[fill=ggreen!70] coordinates {(0--5,15.1) (5--10,54.1) (10--15,14.3) (15--20,5.7) (20--25,3.1)};
+\addplot[fill=gyellow!80] coordinates {(25--40,4.0)};
+\addplot[fill=gred!75] coordinates {(40--100,2.8) (>100,0.9)};
+\node[font=\scriptsize, text=gred, align=center] at (axis cs:40--100,24) {lecturas que\\``teletransportan''\\\faArrowDown};
+\end{axis}
+\end{tikzpicture}
+\caption{Distribución de la precisión en 24\,351 lecturas reales. En verde: aceptadas siempre; amarillo:
+aceptadas solo tras 20\,s sin una lectura mejor; rojo: descartadas.}
+\label{fig:precision}
+\end{figure}
+
+Para resolverlo se diseñó un filtro de cuatro etapas que procesa cada lectura antes de guardarla, enviarla o
+dibujarla (Figura~\ref{fig:filtro}).
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[node distance=0.55cm and 0.9cm, font=\footnotesize]
+  \node[box=gblue, minimum width=3cm] (in) {\faSatelliteDish\ Lectura GPS\\{\scriptsize lat, lng, $\sigma$, $v$, rumbo}};
+  \node[decision, below=of in] (d1) {¿$\sigma \le 25$\,m?\\{\scriptsize (40\,m tras 20\,s)}};
+  \node[decision, below=of d1] (d2) {¿velocidad\\implícita $\le 50$\,m/s?};
+  \node[decision, below=of d2] (d3) {¿pausa\\$> 10$\,s?};
+  \node[box=ggreen, below=of d3, minimum width=3.4cm] (kal) {\textbf{Kalman}\\{\scriptsize predicción con $v$ y rumbo}\\{\scriptsize + corrección ponderada}};
+  \node[decision, below=of kal] (d4) {¿quieto\\3 lecturas?};
+  \node[box=purple, below left=0.6cm and -0.2cm of d4, minimum width=3.2cm] (avg) {\textbf{Posición fija}\\{\scriptsize promedio ponderado $1/\sigma^2$}};
+  \node[box=ggreen, below right=0.6cm and -0.2cm of d4, minimum width=3.2cm] (mov) {\textbf{En movimiento}\\{\scriptsize salida del Kalman}};
+  \node[box=inkgray, below=2.6cm of d4, minimum width=4.2cm] (out) {\faMapMarker*\ Posición filtrada\\{\scriptsize SQLite, servidor y mapa}};
+
+  \node[box=gred, right=1.6cm of d1, minimum width=2.4cm] (x1) {\faTrash\ Descartar};
+  \node[box=gred, right=1.6cm of d2, minimum width=2.4cm] (x2) {\faTrash\ Descartar\\{\scriptsize 5 seguidas \faArrowRight\ reiniciar}};
+  \node[box=gyellow!90!black, left=1.4cm of d3, minimum width=2.4cm] (rst) {\faRedo\ Reiniciar\\{\scriptsize en la lectura nueva}};
+
+  \draw[arr] (in) -- (d1);
+  \draw[arr] (d1) -- node[lbl, right]{sí} (d2);
+  \draw[arr] (d1) -- node[lbl, above]{no} (x1);
+  \draw[arr] (d2) -- node[lbl, right]{sí} (d3);
+  \draw[arr] (d2) -- node[lbl, above]{no} (x2);
+  \draw[arr] (d3) -- node[lbl, right]{no} (kal);
+  \draw[arr] (d3) -- node[lbl, above]{sí} (rst);
+  \draw[arr] (rst) |- (out.west);
+  \draw[arr] (kal) -- (d4);
+  \draw[arr] (d4) -| node[lbl, pos=0.25, above]{sí} (avg);
+  \draw[arr] (d4) -| node[lbl, pos=0.25, above]{no} (mov);
+  \draw[arr] (avg) |- (out);
+  \draw[arr] (mov) |- (out);
+\end{tikzpicture}
+\caption{Etapas del filtro de precisión (\texttt{location\_filter.dart}).}
+\label{fig:filtro}
+\end{figure}
+
+\paragraph{Filtro de Kalman con predicción.}
+Para cada coordenada se mantiene una estimación $\hat{x}$ y su varianza $P$ (en m$^2$). Con un intervalo
+$\Delta t$, una velocidad $v$ y un rumbo $\theta$ reportados por el GPS (efecto Doppler), y una medición $z$
+de precisión $\sigma$:
+\begin{align}
+  \hat{x}^- &= \hat{x} + v\,\Delta t\,(\cos\theta,\ \sin\theta) && \text{predicción por velocidad y rumbo}\\
+  P^- &= P + \Delta t\, q^2, \qquad q = 2 + 0.5\,v && \text{incertidumbre del movimiento}\\
+  K &= \frac{P^-}{P^- + \sigma^2} && \text{ganancia: cuánto confiar en la medición}\\
+  \hat{x} &= \hat{x}^- + K\,(z - \hat{x}^-), \qquad P = (1-K)\,P^- && \text{corrección}
+\end{align}
+Predecir con la velocidad evita que el punto ``se quede atrás'' en un vehículo, y hacer que $q$ crezca con
+la velocidad permite seguir curvas y frenadas.
+
+\paragraph{Posición fija estando quieto.}
+Cuando la velocidad es menor a 0.5\,m/s durante tres lecturas, la posición se fija en un promedio ponderado
+con olvido gradual ($\lambda = 0.98$, memoria de unos 50\,s), que da más peso a las lecturas precisas:
+\begin{equation}
+  \bar{x} = \frac{\sum_i \lambda^{n-i}\, w_i\, z_i}{\sum_i \lambda^{n-i}\, w_i}, \qquad w_i = \frac{1}{\sigma_i^2}
+\end{equation}
+El modo se abandona cuando la velocidad supera 1\,m/s o dos lecturas seguidas caen lejos del punto fijo.
+
+\begin{lstlisting}[caption={Núcleo del filtro de Kalman (Dart).}]
+// Predicción: avanzar según la velocidad y rumbo que reporta el GPS (Doppler).
+if (speed != null && speed > 0.5 && heading != null && heading >= 0) {
+  final step = speed * dt;
+  final h = heading * pi / 180;
+  _lat = _lat! + (step * cos(h)) / 111320.0;
+  _lng = _lng! + (step * sin(h)) / (111320.0 * cos(_lat! * pi / 180));
+}
+final q = processNoise + 0.5 * max(speed ?? 0, 0);
+_variance += dt * q * q;
+
+// Corrección con la medición, ponderada por su precisión.
+final k = _variance / (_variance + acc * acc);
+_lat = _lat! + k * (lat - _lat!);
+_lng = _lng! + k * (lng - _lng!);
+_variance = (1 - k) * _variance;
+\end{lstlisting}
+
+\subsection{Telemetría en el dispositivo}
+
+La velocidad se toma del GPS (efecto Doppler, más estable que distancia/tiempo) y se suaviza con la mediana
+de las tres últimas lecturas. Con ella se clasifica la actividad y se estiman las calorías:
+\begin{equation}
+  \text{kcal} = \text{MET}(\text{actividad}, v) \times \text{peso (kg)} \times \text{tiempo (h)}
+\end{equation}
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[x=0.72cm]
+  % Escala no lineal para que cada franja tenga espacio para su etiqueta
+  \fill[gray!35]      (0,0) rectangle (3.5,0.8);
+  \fill[ggreen!60]    (3.5,0) rectangle (8.5,0.8);
+  \fill[gyellow!75]   (8.5,0) rectangle (14,0.8);
+  \fill[gred!55]      (14,0) rectangle (19.5,0.8);
+  \node[font=\footnotesize\bfseries] at (1.75,0.4) {\faStopCircle\ Detenido};
+  \node[font=\footnotesize\bfseries] at (6,0.4) {\faWalking\ Caminata};
+  \node[font=\footnotesize\bfseries] at (11.25,0.4) {\faRunning\ Alta velocidad};
+  \node[font=\footnotesize\bfseries] at (16.75,0.4) {\faCar\ Vehículo};
+  \foreach \v/\k in {0/0, 3.5/0.5, 8.5/2.0, 14/6.0}{
+    \draw[thick] (\v,0) -- (\v,-0.15) node[below, font=\scriptsize]{\k};
+  }
+  \node[below, font=\scriptsize] at (19.5,-0.15) {m/s};
+  \node[font=\scriptsize, text=gray, align=center] at (1.75,-0.95) {0 kcal};
+  \node[font=\scriptsize, text=gray, align=center] at (6,-0.95) {MET 2.0--5.0\\según ritmo};
+  \node[font=\scriptsize, text=gray, align=center] at (11.25,-0.95) {MET $\approx$ km/h\\(mín. 6.0)};
+  \node[font=\scriptsize, text=gray, align=center] at (16.75,-0.95) {no suma calorías\\(más de 21.6 km/h)};
+\end{tikzpicture}
+\caption{Clasificación de la actividad por velocidad y MET asociado (Compendium of Physical Activities).}
+\end{figure}
+
+Para no inflar la distancia, los desplazamientos solo se suman si la lectura es precisa ($\sigma \le 35$\,m)
+y hay movimiento real (velocidad $> 0.5$\,m/s o desplazamiento mayor que el margen de error).
+
+\subsection{Interfaz móvil}
+
+La interfaz sigue la estética de Google Maps: el mapa ocupa toda la pantalla y los controles flotan encima
+en tarjetas blancas con sombra suave.
+
+\begin{figure}[H]
+\centering
+\capturaO{app_mapa.png}{0.32\linewidth}{%
+\begin{tikzpicture}[scale=0.9, every node/.style={font=\tiny}]
+  % Teléfono
+  \draw[rounded corners=14pt, fill=inkgray, draw=inkgray] (-0.25,-0.3) rectangle (5.25,10.3);
+  \begin{scope}
+    \clip[rounded corners=10pt] (0,0) rectangle (5,10);
+    \fill[mapbg] (0,0) rectangle (5,10);
+    \foreach \y in {1.3,3.1,5.4,7.6,9.1} \draw[white, line width=3pt] (0,\y) -- (5,\y+0.4);
+    \foreach \x in {0.9,2.4,3.9} \draw[white, line width=3pt] (\x,0) -- (\x+0.3,10);
+    \fill[gblue!12] (3.2,7.9) rectangle (4.6,8.8);
+    \fill[ggreen!25] (0.2,1.6) rectangle (1.5,2.8);
+    % Ruta
+    \draw[white, line width=4pt, rounded corners=3pt] (1.0,2.0) -- (1.1,3.3) -- (2.5,3.6) -- (2.6,5.6);
+    \draw[gblue, line width=2.2pt, rounded corners=3pt] (1.0,2.0) -- (1.1,3.3) -- (2.5,3.6) -- (2.6,5.6);
+    % Precisión + punto
+    \fill[gblue, opacity=0.15] (2.6,5.6) circle (0.55);
+    \draw[gblue, opacity=0.4] (2.6,5.6) circle (0.55);
+    \fill[white] (2.6,5.6) circle (0.17);
+    \fill[gblue] (2.6,5.6) circle (0.12);
+    % Barra superior
+    \fill[white, rounded corners=8pt, drop shadow={opacity=0.2}] (0.3,9.0) rectangle (4.7,9.7);
+    \node[anchor=west, text=inkgray] at (0.5,9.35) {\textbf{GeoTrack}};
+    \node[anchor=east, text=gray] at (4.5,9.35) {\faHistory\ \ \faCog};
+    % Botones laterales
+    \fill[white, drop shadow={opacity=0.2}] (4.4,6.4) circle (0.28); \node[text=gray] at (4.4,6.4) {\faCrosshairs};
+    \fill[gred, drop shadow={opacity=0.2}] (4.4,5.6) circle (0.28); \node[text=white] at (4.4,5.6) {\textbf{SOS}};
+    % Tarjeta inferior
+    \fill[white, rounded corners=8pt, drop shadow={opacity=0.2}] (0.3,0.3) rectangle (4.7,2.1);
+    \node[anchor=west, text=inkgray] at (0.5,1.85) {\faWalking\ \textbf{Caminata}};
+    \node[anchor=west, text=ggreen] at (0.5,1.5) {\faCircle\ \textcolor{gray}{Sincronizado · GPS $\pm$5 m}};
+    \node[text=inkgray, align=center] at (0.95,0.85) {\textbf{4.8}\\km/h};
+    \node[text=inkgray, align=center] at (2.0,0.85) {\textbf{1.27}\\km};
+    \node[text=inkgray, align=center] at (3.0,0.85) {\textbf{86}\\kcal};
+    \fill[gred, drop shadow={opacity=0.3}] (4.1,0.9) circle (0.38); \node[text=white, font=\small] at (4.1,0.9) {\faStop};
+  \end{scope}
+\end{tikzpicture}}
+\hspace{0.8cm}
+\begin{minipage}[b]{0.55\linewidth}\small
+\begin{itemize}
+  \item \textbf{Ruta en vivo} dibujada con borde blanco, como en Google Maps.
+  \item \textbf{Punto azul con círculo de precisión}: el radio es el margen de error del GPS en ese momento.
+  \item \textbf{Línea de estado}: rastreo, sincronización, puntos en cola y precisión (``GPS $\pm$5\,m'').
+  \item \textbf{Tarjeta de telemetría}: velocidad, distancia, calorías y actividad.
+  \item \textbf{Botón SOS}: se mantiene presionado 2\,s para evitar activaciones accidentales.
+  \item \textbf{Botón flotante} Iniciar/Detener.
+\end{itemize}
+\vspace{1.5cm}
+\end{minipage}
+\caption{Pantalla principal de la aplicación móvil.}
+\end{figure}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Backend: API y tiempo real}
+
+\subsection{Modelo de datos}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  ent/.style={draw=#1, fill=white, rounded corners=3pt, thick, inner sep=1pt, font=\scriptsize,
+    drop shadow={opacity=0.12}},
+  rel/.style={thick, color=inkgray, -{Stealth[length=2mm]}},
+  node distance=1.0cm and 1.3cm]
+  \node[ent=gblue] (dev) {\entidad{gblue}{devices}{\faKey\ id\\name, color, platform\\last\_seen\_at\\last\_lat, last\_lng\\last\_speed, last\_battery\\tracking}};
+  \node[ent=ggreen, right=of dev] (ses) {\entidad{ggreen}{sessions}{\faKey\ id\\device\_id\\name\\started\_at, ended\_at\\distance\_m, calories}};
+  \node[ent=awsorange, right=of ses] (loc) {\entidad{awsorange}{locations}{\faKey\ id\\device\_id, session\_id\\ts {\tiny (UNIQUE con device\_id)}\\lat, lng, accuracy\\speed, heading, altitude\\battery, activity}};
+  \node[ent=gred, below=of dev] (alr) {\entidad{gred}{alerts}{\faKey\ id\\device\_id, type\\message, lat, lng\\created\_at\\acknowledged}};
+  \node[ent=purple, below=of ses] (gst) {\entidad{purple}{geofence\_state}{\faKey\ device\_id\\\faKey\ geofence\_id\\inside}};
+  \node[ent=purple, below=of loc] (geo) {\entidad{purple}{geofences}{\faKey\ id\\name\\lat, lng, radius\_m}};
+  \draw[rel] (ses) -- node[lbl, above]{N:1} (dev);
+  \draw[rel] (loc) -- node[lbl, above]{N:1} (ses);
+  \draw[rel] (loc.north) -- ++(0,0.5) -| node[lbl, pos=0.25, above]{N:1} (dev.north);
+  \draw[rel] (alr) -- node[lbl, right]{N:1} (dev);
+  \draw[rel] (gst) -- node[lbl, above]{N:1} (geo);
+  \draw[rel] (gst.north west) -- node[lbl, pos=0.4, right=2pt]{N:1} (dev.south east);
+\end{tikzpicture}
+\caption{Modelo entidad-relación en PostgreSQL.}
+\end{figure}
+
+\subsection{API REST}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{l l X}
+\toprule
+\textbf{Método} & \textbf{Ruta} & \textbf{Descripción} \\
+\midrule
+\multicolumn{3}{l}{\textcolor{gblue}{\faMobile*\ \textbf{Dispositivos}} (cabecera \texttt{x-api-key})} \\
+POST & \texttt{/api/devices/register} & Registra el teléfono y le asigna un color único. \\
+POST & \texttt{/api/sessions/start} & Inicia una sesión de rastreo. \\
+POST & \texttt{/api/sessions/:id/stop} & Cierra la sesión con distancia y calorías finales. \\
+PATCH & \texttt{/api/sessions/:id} & Renombra una sesión. \\
+POST & \texttt{/api/locations} & Recibe un lote de posiciones (idempotente). \\
+POST & \texttt{/api/alerts/sos} & Emite una alerta SOS con la última posición. \\
+\midrule
+\multicolumn{3}{l}{\textcolor{ggreen}{\faDesktop\ \textbf{Dashboard}}} \\
+GET & \texttt{/api/devices}, \texttt{/api/live} & Estado de los dispositivos y rutas de las sesiones activas. \\
+GET & \texttt{/api/history} & Posiciones de un dispositivo en un rango de fechas. \\
+GET & \texttt{/api/history/stats} & Distancia, duración, velocidad media y máxima. \\
+GET & \texttt{/api/history/export} & Descarga del recorrido en GPX o CSV. \\
+GET/POST/DELETE & \texttt{/api/geofences} & Administración de geocercas. \\
+GET/POST & \texttt{/api/alerts}, \texttt{/:id/ack} & Listado y confirmación de alertas. \\
+\bottomrule
+\end{tabularx}
+\caption{Principales rutas de la API.}
+\end{table}
+
+\subsection{Procesamiento de cada lote}
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[node distance=0.4cm, font=\footnotesize]
+  \node[box=gblue, minimum width=2.4cm] (a) {\faInbox\\Lote recibido};
+  \node[box=awsorange, right=of a, minimum width=2.4cm] (b) {\faDatabase\\INSERT\\idempotente};
+  \node[box=awsorange, right=of b, minimum width=2.4cm] (c) {\faSync\\Actualizar\\último estado};
+  \node[box=gred, right=of c, minimum width=2.4cm] (d) {\faBatteryQuarter\\¿Batería\\$\le 15$\,\%?};
+  \node[box=purple, right=of d, minimum width=2.4cm] (e) {\faDrawPolygon\\Evaluar\\geocercas};
+  \node[box=ggreen, below=0.9cm of c, minimum width=5cm] (f) {\faBroadcastTower\ \texttt{emit('locations')} + \texttt{emit('device')}};
+  \draw[arr] (a) -- (b); \draw[arr] (b) -- (c); \draw[arr] (c) -- (d); \draw[arr] (d) -- (e);
+  \draw[arr] (e) |- (f);
+\end{tikzpicture}
+\caption{Flujo de \texttt{POST /api/locations} en el servidor.}
+\end{figure}
+
+Además, un \textbf{vigilante} se ejecuta cada 30\,s y genera una alerta \emph{``sin señal''} si un
+dispositivo que está rastreando lleva más de 2 minutos sin enviar datos.
+
+\subsection{Geocercas}
+Una geocerca es un círculo (centro y radio). Para cada posición se calcula la distancia al centro con la
+fórmula de Haversine, y se compara con el último estado conocido (dentro/fuera) guardado en
+\texttt{geofence\_state}; solo un \emph{cambio} de estado genera alerta:
+\begin{equation}
+  d = 2R \arcsin\sqrt{\sin^2\!\frac{\Delta\varphi}{2} + \cos\varphi_1\cos\varphi_2\sin^2\!\frac{\Delta\lambda}{2}},
+  \qquad R = 6\,371\,000\ \text{m}
+\end{equation}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=3.4cm, font=\footnotesize]
+  \node[circle, draw=gray, fill=softgray, thick, minimum size=1.6cm, align=center] (u) {Sin\\estado};
+  \node[circle, draw=ggreen, fill=ggreen!12, thick, minimum size=1.6cm, right=of u] (in) {Dentro};
+  \node[circle, draw=gred, fill=gred!10, thick, minimum size=1.6cm, right=of in] (out) {Fuera};
+  \draw[arr] (u) -- node[lbl, above]{1.\textsuperscript{a} lectura}node[lbl, below]{sin alerta} (in);
+  \draw[arr] (u.north) to[bend left=35] node[lbl, above]{1.\textsuperscript{a} lectura, sin alerta} (out.north);
+  \draw[arr, gred] (in) to[bend left=20] node[lbl, above]{$d > r$ \faBell\ \textbf{salió}} (out);
+  \draw[arr, ggreen] (out) to[bend left=20] node[lbl, below]{$d \le r$ \faBell\ \textbf{entró}} (in);
+\end{tikzpicture}
+\caption{Máquina de estados de una geocerca por dispositivo.}
+\end{figure}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Centro de monitoreo web}
+
+\begin{figure}[H]
+\centering
+\capturaO{dashboard.png}{\linewidth}{%
+\begin{tikzpicture}[every node/.style={font=\tiny}]
+  \fill[rounded corners=4pt, softgray, draw=gray!50] (0,0) rectangle (15,8.4);
+  \fill[gray!25, rounded corners=4pt] (0,7.9) rectangle (15,8.4);
+  \foreach \x/\c in {0.3/gred,0.6/gyellow,0.9/ggreen} \fill[\c] (\x,8.15) circle (0.08);
+  \begin{scope}
+    \clip (0,0) rectangle (15,7.9);
+    \fill[mapbg] (0,0) rectangle (15,7.9);
+    \foreach \y in {1.2,2.9,4.6,6.4} \draw[white, line width=4pt] (0,\y) -- (15,\y+0.6);
+    \foreach \x in {5.5,8.2,11,13.4} \draw[white, line width=4pt] (\x,0) -- (\x-0.5,7.9);
+    \fill[gblue!12] (9,5.1) rectangle (10.6,6.0);
+    \fill[ggreen!25] (11.6,1.6) rectangle (13,2.6);
+    % Rutas
+    \foreach \c/\p in {gblue/{(6,1.5) (6.4,3.2) (8.0,3.6) (8.4,5.8) (10.2,6.3)}, gred/{(13.6,0.8) (13.2,2.2) (11.2,2.0) (11.0,4.2) (12.4,4.6)}, purple/{(4.8,6.8) (5.3,5.2) (7.0,4.9) (7.6,4.0)}}{
+      \draw[white, line width=4pt, rounded corners=3pt] plot coordinates {\p};
+      \draw[\c, line width=2pt, rounded corners=3pt] plot coordinates {\p};
+    }
+    \foreach \c/\x/\y/\r in {gblue/10.2/6.3/0.35, gred/12.4/4.6/0.25, purple/7.6/4.0/0.3}{
+      \fill[\c, opacity=0.15] (\x,\y) circle (\r);
+      \fill[white] (\x,\y) circle (0.15); \fill[\c] (\x,\y) circle (0.1);
+    }
+    \node[fill=white, rounded corners=2pt, inner sep=2pt] at (10.2,6.75) {\textcolor{gblue}{\faCircle} Mi teléfono · 4.8 km/h};
+    \node[fill=white, rounded corners=2pt, inner sep=2pt] at (12.4,5.0) {\textcolor{gred}{\faCircle} Repartidor 2 · 32 km/h};
+    \node[fill=white, rounded corners=2pt, inner sep=2pt] at (7.6,4.4) {\textcolor{purple}{\faCircle} Supervisor · detenido};
+  \end{scope}
+  % Panel lateral
+  \fill[white, rounded corners=6pt, drop shadow={opacity=0.2}] (0.3,1.4) rectangle (4.2,7.6);
+  \node[anchor=west, text=inkgray, font=\scriptsize\bfseries] at (0.5,7.25) {\faMapMarker*\ GeoTrack · Monitoreo};
+  \foreach \i/\t in {0/\faBroadcastTower, 1/\faHistory, 2/\faDrawPolygon, 3/\faBell}{
+    \node[anchor=center, text=gray, font=\scriptsize] at (0.95+\i*0.9,6.75) {\t};
+  }
+  \node[anchor=west, text=gblue, font=\tiny\bfseries] at (0.5,6.42) {En vivo};
+  \fill[gblue] (0.6,6.56) rectangle (1.3,6.6);
+  \foreach \y/\c/\n/\s in {5.8/gblue/Mi teléfono/Caminata · 86\,\%, 5.0/gred/Repartidor 2/Vehículo · 54\,\%, 4.2/purple/Supervisor/Detenido · 71\,\%}{
+    \fill[softgray, rounded corners=3pt] (0.5,\y-0.32) rectangle (4.0,\y+0.32);
+    \fill[\c] (0.75,\y) circle (0.12);
+    \node[anchor=west, text=inkgray] at (0.95,\y+0.1) {\textbf{\n}};
+    \node[anchor=west, text=gray] at (0.95,\y-0.15) {\s};
+    \node[anchor=east, text=ggreen, font=\tiny] at (3.9,\y) {\faCircle};
+  }
+  % Reproductor
+  \fill[white, rounded corners=10pt, drop shadow={opacity=0.2}] (5.2,0.3) rectangle (14.4,1.15);
+  \fill[gblue] (5.65,0.72) circle (0.25); \node[text=white] at (5.67,0.72) {\faPlay};
+  \draw[gray!40, line width=2.5pt, line cap=round] (6.2,0.72) -- (11.4,0.72);
+  \draw[gblue, line width=2.5pt, line cap=round] (6.2,0.72) -- (8.6,0.72);
+  \fill[gblue] (8.6,0.72) circle (0.1);
+  \foreach \i/\v in {0/x1,1/x10,3/x30,4/x60}{
+    \node[draw=gray!50, rounded corners=5pt, inner sep=2pt] at (11.85+\i*0.55,0.72) {\v};
+  }
+  \node[draw=gblue, fill=gblue, text=white, rounded corners=5pt, inner sep=2pt] at (11.85+2*0.55,0.72) {x20};
+\end{tikzpicture}}
+\caption{Centro de monitoreo: panel en vivo con varios dispositivos y reproductor de rutas.}
+\end{figure}
+
+\subsection{Funcionalidades}
+\begin{itemize}
+  \item \textbf{Panel en vivo:} todos los dispositivos que rastrean, cada uno con su color, etiqueta con nombre
+        y velocidad, y círculo de precisión alrededor de la última posición.
+  \item \textbf{Trazado en tiempo real:} cada evento \texttt{locations} de Socket.IO extiende la polilínea
+        del dispositivo sin recargar la página.
+  \item \textbf{Consultas históricas:} filtros por dispositivo, fecha y hora, con atajos (1\,h, Hoy, 24\,h,
+        7 días) y estadísticas del período.
+  \item \textbf{Reproductor (playback):} Play/Pausa, barra de progreso arrastrable y velocidades x1, x10,
+        x20, x30 y x60; los huecos sin señal se saltan para no esperar en vano.
+  \item \textbf{Exportación} del recorrido en GPX (compatible con Google Earth y Strava) o CSV.
+\end{itemize}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Innovaciones (Fase 5)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\centering\arraybackslash}p{0.8cm} l X}
+\toprule
+ & \textbf{Funcionalidad} & \textbf{Valor que aporta} \\
+\midrule
+\textcolor{purple}{\Large\faDrawPolygon} & Geocercas con alertas & Avisa cuando un dispositivo entra o sale de una zona (almacén, colegio, obra). Se dibujan con un clic y un radio. \\
+\textcolor{gred}{\Large\faExclamationCircle} & Botón SOS & Alerta roja inmediata en el panel con la posición exacta; se mantiene 2\,s para evitar falsas alarmas. \\
+\textcolor{gyellow!90!black}{\Large\faBatteryQuarter} & Alertas automáticas & Batería baja ($\le 15$\,\%) y dispositivo \emph{sin señal} ($> 2$\,min sin datos). \\
+\textcolor{ggreen}{\Large\faFileExport} & Exportación GPX/CSV y estadísticas & Distancia, duración, velocidad media y máxima; integración con otras herramientas. \\
+\textcolor{gblue}{\Large\faLock} & Autenticación & API key para dispositivos y token para el panel. \\
+\textcolor{inkgray}{\Large\faCrosshairs} & Filtro de precisión GNSS & Elimina saltos, suaviza la ruta, fija la posición estando quieto y muestra el margen de error. \\
+\bottomrule
+\end{tabularx}
+\caption{Funcionalidades adicionales implementadas.}
+\end{table}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Despliegue y operación}
+
+\subsection{Scripts de infraestructura}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{l X}
+\toprule
+\textbf{Script} & \textbf{Qué hace} \\
+\midrule
+\texttt{deploy-aws.ps1} & Crea llave SSH, Security Groups, RDS, EC2 con Nginx y Node.js, IP elástica, y despliega la aplicación (unos 15 min). \\
+\texttt{update-app.ps1} & Compila el dashboard, empaqueta el backend, lo sube por SSH, reinicia el servicio y verifica \texttt{/api/health}. \\
+\texttt{build-apk-cloud.ps1} & Alternativa: compila el APK en una EC2 Linux temporal que se autodestruye. \\
+\texttt{destroy-aws.ps1} & Elimina todos los recursos para dejar de pagar. \\
+\bottomrule
+\end{tabularx}
+\caption{Automatización del ciclo de vida de la infraestructura.}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}[node distance=0.35cm, font=\footnotesize]
+  \node[box=inkgray, minimum width=2.2cm] (code) {\faCode\\Cambio de\\código};
+  \node[box=gblue, right=of code, minimum width=2.2cm] (an) {\faCheckDouble\\\texttt{dart analyze}};
+  \node[box=gblue, right=of an, minimum width=2.4cm] (apk) {\faCogs\\\texttt{flutter build}\\\texttt{apk --release}};
+  \node[box=gblue, right=of apk, minimum width=2.2cm] (adb) {\faMobile*\\\texttt{adb install -r}};
+  \node[box=ggreen, below=0.9cm of an, minimum width=2.2cm] (vite) {\faCubes\\\texttt{vite build}};
+  \node[box=awsorange, right=of vite, minimum width=2.4cm] (scp) {\faUpload\\\texttt{scp} + \texttt{npm ci}};
+  \node[box=awsorange, right=of scp, minimum width=2.2cm] (sysd) {\faRedo\\\texttt{systemctl}\\\texttt{restart}};
+  \node[box=ggreen, right=of sysd, minimum width=2.2cm] (hc) {\faHeartbeat\\\texttt{/api/health}};
+  \draw[arr] (code) -- (an); \draw[arr] (an) -- (apk); \draw[arr] (apk) -- (adb);
+  \draw[arr] (code) |- (vite); \draw[arr] (vite) -- (scp); \draw[arr] (scp) -- (sysd); \draw[arr] (sysd) -- (hc);
+  \node[font=\scriptsize\bfseries, text=gblue, above=0.05cm of apk] {App móvil};
+  \node[font=\scriptsize\bfseries, text=awsorange!80!black, below=0.05cm of scp] {Servidor y dashboard (\texttt{update-app.ps1})};
+\end{tikzpicture}
+\caption{Flujo de entrega de una nueva versión.}
+\end{figure}
+
+\begin{nota}[Firma del APK]
+El APK de producción se firma siempre con la misma llave (\texttt{geotrack-release.jks}). Así cada
+actualización se instala encima de la anterior sin borrar el historial guardado en el teléfono.
+\end{nota}
+
+\subsection{Problemas encontrados y soluciones}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{3.6cm} X X}
+\toprule
+\textbf{Problema} & \textbf{Causa} & \textbf{Solución} \\
+\midrule
+La ruta ``salta'' a otros lugares & Lecturas por Wi-Fi/antenas con error de 74--800\,m tratadas como exactas. & Filtro de precisión de cuatro etapas (Sección 5.4). \\
+El punto se mueve estando quieto & Ruido normal del GNSS de 5--20\,m. & Kalman + promedio ponderado en modo quieto. \\
+Aviso falso ``Sin conexión'' & La pantalla solo se refrescaba al llegar una posición nueva. & Refresco tras cada envío y estado inicial ``desconocido''. \\
+No compila en Windows & La tilde de la carpeta (``posición'') rompe el compilador AOT de Dart. & Unidad virtual sin tildes (\texttt{subst G:}) y caché incremental de Kotlin desactivada. \\
+Scripts colgados en SSH & Cambió la IP pública del administrador. & Nueva regla \texttt{/32} en el Security Group. \\
+Android pausa el GPS & Optimización de batería del fabricante. & Servicio en primer plano + watchdog cada 30\,s. \\
+\bottomrule
+\end{tabularx}
+\caption{Incidencias técnicas y su resolución.}
+\end{table}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Resultados y pruebas de campo}
+
+El sistema se probó durante varios días en la ciudad del Cusco con un Samsung Galaxy A26 (receptor GNSS
+Samsung S.LSI), caminando, en vehículo y dentro de edificios.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{l r}
+\toprule
+\textbf{Indicador} & \textbf{Valor} \\
+\midrule
+Dispositivos registrados & 3 \\
+Sesiones de rastreo & 21 \\
+Posiciones almacenadas en el servidor & 50\,785 \\
+Distancia acumulada en sesiones & 97.8 km \\
+Velocidad máxima registrada (vehículo) & 71.4 km/h \\
+Lecturas con precisión $\le 10$\,m & 69.2\,\% \\
+Intervalo mediano entre puntos (configurado a 1\,s) & 1.0 s \\
+\bottomrule
+\end{tabular}
+\caption{Resumen de las pruebas de campo.}
+\end{table}
+
+\subsection{Evaluación del filtro de precisión}
+
+Las 24\,351 lecturas crudas del 8 y 9 de octubre se volvieron a procesar con el filtro para medir su
+efecto de forma objetiva:
+
+\begin{figure}[!htbp]
+\centering
+\begin{subfigure}[b]{0.48\linewidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, bar shift=0pt, width=\linewidth, height=5.4cm, bar width=0.75cm, ymin=0, ymax=23,
+  symbolic x coords={Crudo, Kalman, {Kalman + quieto}}, xtick={Crudo, Kalman, {Kalman + quieto}},
+  ylabel={km}, nodes near coords, nodes near coords style={font=\scriptsize},
+  axis lines*=left, ymajorgrids, grid style={gray!20}, tick label style={font=\scriptsize},
+  every axis plot/.append style={draw=none}, enlarge x limits=0.25,
+]
+\addplot[fill=gred!70] coordinates {(Crudo,18.29)};
+\addplot[fill=gyellow!80] coordinates {(Kalman,6.37)};
+\addplot[fill=ggreen!70] coordinates {({Kalman + quieto},3.59)};
+\end{axis}
+\end{tikzpicture}
+\caption{Movimiento falso acumulado estando quieto.}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\linewidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, bar shift=0pt, width=\linewidth, height=5.4cm, bar width=0.75cm, ymin=0, ymax=11,
+  symbolic x coords={Crudo, Filtrado}, xtick={Crudo, Filtrado},
+  ylabel={saltos detectados}, nodes near coords, nodes near coords style={font=\scriptsize},
+  axis lines*=left, ymajorgrids, grid style={gray!20}, tick label style={font=\scriptsize},
+  every axis plot/.append style={draw=none}, enlarge x limits=0.45,
+]
+\addplot[fill=gred!70] coordinates {(Crudo,9)};
+\addplot[fill=ggreen!70] coordinates {(Filtrado,2)};
+\end{axis}
+\end{tikzpicture}
+\caption{Saltos a otro lugar y regreso.}
+\end{subfigure}
+\caption{Efecto del filtro sobre datos reales.}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{l c c}
+\toprule
+\textbf{Métrica} & \textbf{Sin filtro} & \textbf{Con filtro} \\
+\midrule
+Saltos a otro lugar & 9 & 2\textsuperscript{*} \\
+Movimiento falso estando quieto & 18.29 km & 3.59 km ($-80$\,\%) \\
+Desfase respecto al GPS en vehículo (percentil 95) & — & 5.9 m \\
+Lecturas descartadas por imprecisas & 0 \% & 6.8 \% \\
+\bottomrule
+\end{tabular}
+\caption{Métricas del filtro. \textsuperscript{*}Los dos restantes corresponden a vueltas en U reales
+después de que el GPS se pausara.}
+\end{table}
+
+\begin{alerta}[Límite físico]
+Un receptor GNSS de teléfono de una sola frecuencia tiene un límite de unos 3--5\,m al aire libre y peor
+entre edificios o bajo techo, por la reflexión de la señal (\emph{multipath}). Ningún software lo elimina por
+completo; para precisión centimétrica se requieren equipos con corrección RTK. Por eso la app muestra el
+\textbf{círculo de precisión}: comunica honestamente cuánto confiar en cada lectura.
+\end{alerta}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Conclusiones}
+
+\begin{enumerate}
+  \item Se construyó y desplegó un sistema de rastreo completo y funcional de extremo a extremo: app
+        Android, backend en AWS y centro de monitoreo web, que cumple los diez requerimientos funcionales y
+        supera el mínimo de innovaciones solicitado.
+  \item El enfoque \emph{offline-first} con idempotencia en el servidor permite que los cortes de red no
+        pierdan ni dupliquen datos: todo se guarda primero en el teléfono y se reenvía al volver la señal, algo esencial en un sistema embebido móvil con conectividad intermitente.
+  \item El servicio en primer plano con watchdog, independiente de la interfaz, permitió un rastreo continuo
+        de un punto por segundo (intervalo mediano medido en campo: 1.0\,s).
+  \item El análisis de datos reales permitió diagnosticar el origen de los errores de posición y diseñar un
+        filtro (validación, Kalman y promedio estando quieto) que eliminó los saltos y redujo un 80\,\% la
+        deriva estando quieto.
+  \item La automatización con scripts hizo la infraestructura reproducible y redujo cada actualización del
+        servidor a un solo comando.
+\end{enumerate}
+
+\subsection{Trabajo futuro}
+\begin{itemize}
+  \item \textbf{HTTPS} con un dominio propio y certificado de Let's Encrypt (\texttt{certbot}).
+  \item \textbf{Ajuste a calles} (\emph{map matching}) para pegar la ruta del vehículo a la vía.
+  \item Kalman de estado completo (posición y velocidad) y fusión con acelerómetro y giroscopio.
+  \item Notificaciones \emph{push} de las alertas al teléfono del supervisor.
+  \item Cuentas de usuario con roles y organizaciones (multiinquilino) y versión para iOS.
+  \item Frecuencia de captura adaptativa según el movimiento, para ahorrar batería.
+\end{itemize}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section*{Referencias}
+\addcontentsline{toc}{section}{Referencias}
+\begin{enumerate}[label={[\arabic*]}, leftmargin=*]
+  \item Flutter. \emph{Documentación oficial}. \url{https://docs.flutter.dev}
+  \item Android Developers. \emph{Foreground services} y \emph{Background location limits}.
+        \url{https://developer.android.com/develop/background-work/services/fgs}
+  \item Amazon Web Services. \emph{Amazon EC2} y \emph{Amazon RDS for PostgreSQL User Guide}.
+        \url{https://docs.aws.amazon.com}
+  \item Socket.IO. \emph{Documentation}. \url{https://socket.io/docs/v4/}
+  \item Leaflet. \emph{An open-source JavaScript library for interactive maps}. \url{https://leafletjs.com}
+  \item Ainsworth, B. E. et al. (2011). \emph{Compendium of Physical Activities}. Medicine \& Science in
+        Sports \& Exercise, 43(8), 1575--1581.
+  \item Kalman, R. E. (1960). A New Approach to Linear Filtering and Prediction Problems.
+        \emph{Journal of Basic Engineering}, 82(1), 35--45.
+  \item Sinnott, R. W. (1984). Virtues of the Haversine. \emph{Sky and Telescope}, 68(2), 159.
+\end{enumerate}
+
+\end{document}

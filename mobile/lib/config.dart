@@ -48,7 +48,7 @@ class AppConfig {
     if (apiKey != null) await _p.setString(_kApiKey, apiKey.trim());
     if (deviceName != null) await _p.setString(_kDeviceName, deviceName.trim());
     if (weightKg != null) await _p.setDouble(_kWeight, weightKg);
-    if (intervalSec != null) await _p.setInt(_kInterval, intervalSec.clamp(5, 10));
+    if (intervalSec != null) await _p.setInt(_kInterval, intervalSec.clamp(1, 10));
   }
 
   Future<void> setActiveSession(String? id) async {

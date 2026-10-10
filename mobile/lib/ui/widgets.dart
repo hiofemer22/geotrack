@@ -29,15 +29,16 @@ class FloatingCard extends StatelessWidget {
 }
 
 class StatusLine extends StatelessWidget {
-  const StatusLine({super.key, required this.tracking, required this.online, required this.pending});
+  const StatusLine({super.key, required this.tracking, required this.online, required this.pending, this.accuracy});
   final bool tracking;
   final bool? online;
   final int pending;
+  final double? accuracy; // m
 
   @override
   Widget build(BuildContext context) {
     late final Color color;
-    late final String text;
+    late String text;
     if (!tracking) {
       color = Palette.muted;
       text = 'Rastreo detenido';
@@ -51,6 +52,7 @@ class StatusLine extends StatelessWidget {
       color = Palette.success;
       text = 'Rastreo activo · sincronizado';
     }
+    if (accuracy != null) text += ' · GPS ±${accuracy!.round()} m';
     return Row(children: [
       Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
       const SizedBox(width: 6),

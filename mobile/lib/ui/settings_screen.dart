@@ -90,9 +90,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Expanded(
                 child: Slider(
                   value: _interval.toDouble(),
-                  min: 5,
+                  min: 1,
                   max: 10,
-                  divisions: 5,
+                  divisions: 9,
                   label: '$_interval s',
                   onChanged: (v) => setState(() => _interval = v.round()),
                 ),

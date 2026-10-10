@@ -13,7 +13,7 @@ class SyncService {
   bool _running = false;
   bool _registered = false;
   DateTime? lastSuccess;
-  bool online = false;
+  bool? online; // null hasta el primer intento de envío
 
   Map<String, String> _headers(AppConfig cfg) => {'Content-Type': 'application/json', 'x-api-key': cfg.apiKey};
 

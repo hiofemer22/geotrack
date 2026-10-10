@@ -17,3 +17,12 @@ infra/*.pem
 
 # Dashboard compilado (lo genera "npm run build" en web/)
 backend/public/
+
+# Plantilla del informe y copia suelta del PDF (el informe vive en informe/)
+Template.zip
+/Informe_GeoTrack.pdf
+# Archivos intermedios de LaTeX
+*.aux
+*.toc
+*.out
+*.synctex.gz

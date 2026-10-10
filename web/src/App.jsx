@@ -5,6 +5,7 @@ import { AlertsPanel, GeofencePanel, HistoryPanel, LivePanel } from './Panels.js
 import Playback, { usePlayback } from './Playback.jsx';
 
 const MAX_TRAIL = 5000;
+const MAX_ACCURACY_M = 40; // igual que el servidor: lecturas peores se ocultan
 
 const TABS = [
   { id: 'live', icon: 'sensors', label: 'En vivo' },
@@ -69,7 +70,7 @@ function Dashboard() {
     socket.on('session_start', ({ deviceId }) => setTrails((prev) => ({ ...prev, [deviceId]: [] })));
     socket.on('locations', ({ deviceId, points }) => {
       setTrails((prev) => {
-        const merged = [...(prev[deviceId] || []), ...points]
+        const merged = [...(prev[deviceId] || []), ...points.filter((p) => p.accuracy == null || p.accuracy <= MAX_ACCURACY_M)]
           .sort((a, b) => new Date(a.ts) - new Date(b.ts))
           .slice(-MAX_TRAIL);
         return { ...prev, [deviceId]: merged };

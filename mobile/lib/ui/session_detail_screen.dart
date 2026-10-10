@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../data/local_db.dart';
 import '../data/models.dart';
+import '../services/location_filter.dart';
 import '../services/tracking_service.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -24,7 +25,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
   void initState() {
     super.initState();
     LocalDb.open().then((db) => db.pointsFor(_s.id)).then((p) {
-      if (mounted) setState(() => _points = p);
+      // Rutas grabadas antes del filtro: ocultar las lecturas imprecisas que "teletransportaban"
+      final clean = p.where((x) => x.accuracy == null || x.accuracy! <= LocationFilter.relaxedAccuracy).toList();
+      if (mounted) setState(() => _points = clean);
     });
   }
 

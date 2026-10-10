@@ -17,6 +17,9 @@ const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || 'dev-dashboard-token';
 const DASHBOARD_PUBLIC = process.env.DASHBOARD_PUBLIC === 'true';
 const OFFLINE_AFTER_SEC = Number(process.env.OFFLINE_AFTER_SEC || 120);
 const LOW_BATTERY = 15;
+// Lecturas con peor precisión (Wi-Fi/antenas) se ocultan en mapas y estadísticas: la app ya no las envía,
+// pero las rutas antiguas sí las tienen y aparecen como saltos.
+const MAX_ACCURACY_M = 40;
 
 const app = express();
 app.use(cors());
@@ -234,10 +237,12 @@ app.patch('/api/devices/:id', requireDashboard, wrap(async (req, res) => {
 /** Rutas de la sesión activa de cada dispositivo que está rastreando. */
 app.get('/api/live', requireDashboard, wrap(async (_req, res) => {
   const { rows } = await query(
-    `SELECT l.device_id, l.ts, l.lat, l.lng, l.speed FROM locations l
+    `SELECT l.device_id, l.ts, l.lat, l.lng, l.speed, l.accuracy FROM locations l
      JOIN devices d ON d.id = l.device_id AND d.tracking
      WHERE l.session_id = (SELECT s.id FROM sessions s WHERE s.device_id = d.id ORDER BY s.started_at DESC LIMIT 1)
+       AND (l.accuracy IS NULL OR l.accuracy <= $1)
      ORDER BY l.ts`,
+    [MAX_ACCURACY_M],
   );
   const trails = {};
   for (const r of rows) (trails[r.device_id] ||= []).push(r);
@@ -252,16 +257,18 @@ function historyParams(req) {
 app.get('/api/history', requireDashboard, wrap(async (req, res) => {
   const { rows } = await query(
     `SELECT ts, lat, lng, speed, accuracy, heading, altitude, battery, activity, session_id
-     FROM locations WHERE device_id = $1 AND ts BETWEEN $2 AND $3 ORDER BY ts LIMIT 100000`,
-    historyParams(req),
+     FROM locations WHERE device_id = $1 AND ts BETWEEN $2 AND $3 AND (accuracy IS NULL OR accuracy <= $4)
+     ORDER BY ts LIMIT 100000`,
+    [...historyParams(req), MAX_ACCURACY_M],
   );
   res.json(rows);
 }));
 
 app.get('/api/history/stats', requireDashboard, wrap(async (req, res) => {
   const { rows } = await query(
-    `SELECT ts, lat, lng, speed FROM locations WHERE device_id = $1 AND ts BETWEEN $2 AND $3 ORDER BY ts`,
-    historyParams(req),
+    `SELECT ts, lat, lng, speed FROM locations
+     WHERE device_id = $1 AND ts BETWEEN $2 AND $3 AND (accuracy IS NULL OR accuracy <= $4) ORDER BY ts`,
+    [...historyParams(req), MAX_ACCURACY_M],
   );
   let distance = 0, maxSpeed = 0, moving = 0;
   for (let i = 1; i < rows.length; i++) {

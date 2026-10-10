@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:battery_plus/battery_plus.dart';
@@ -12,6 +13,7 @@ import 'package:uuid/uuid.dart';
 import '../config.dart';
 import '../data/local_db.dart';
 import '../data/models.dart';
+import 'location_filter.dart';
 import 'sync_service.dart';
 import 'telemetry.dart';
 
@@ -169,6 +171,8 @@ Future<void> onServiceStart(ServiceInstance service) async {
 
   int? batteryLevel;
   Position? lastPosition;
+  final filter = LocationFilter();
+  FilteredFix? lastFiltered;
   StreamSubscription<Position>? sub;
   Timer? syncTimer;
   Timer? watchdog;
@@ -195,8 +199,8 @@ Future<void> onServiceStart(ServiceInstance service) async {
     }
     service.invoke('update', {
       'sessionId': sessionId,
-      'lat': lastPosition?.latitude,
-      'lng': lastPosition?.longitude,
+      'lat': lastFiltered?.lat,
+      'lng': lastFiltered?.lng,
       'accuracy': lastPosition?.accuracy,
       'heading': lastPosition?.heading,
       'ts': lastPosition?.timestamp.millisecondsSinceEpoch,
@@ -215,14 +219,18 @@ Future<void> onServiceStart(ServiceInstance service) async {
 
   Future<void> onPosition(Position pos) async {
     lastFix = DateTime.now();
-    lastPosition = pos;
     final ts = pos.timestamp.millisecondsSinceEpoch;
-    telemetry.add(lat: pos.latitude, lng: pos.longitude, ts: ts, gpsSpeed: pos.speed, accuracy: pos.accuracy);
+    final fix = filter.add(
+      lat: pos.latitude, lng: pos.longitude, accuracy: pos.accuracy, ts: ts, speed: pos.speed, heading: pos.heading);
+    if (fix == null) return; // lectura imprecisa o salto imposible: se descarta
+    lastPosition = pos;
+    lastFiltered = fix;
+    telemetry.add(lat: fix.lat, lng: fix.lng, ts: ts, gpsSpeed: pos.speed, accuracy: pos.accuracy);
     await db.insertPoint(TrackPoint(
       sessionId: sessionId,
       ts: ts,
-      lat: pos.latitude,
-      lng: pos.longitude,
+      lat: fix.lat,
+      lng: fix.lng,
       speed: telemetry.speed,
       accuracy: pos.accuracy,
       heading: pos.heading,
@@ -250,13 +258,17 @@ Future<void> onServiceStart(ServiceInstance service) async {
 
   // Envío al servidor: cada intervalo se intenta vaciar la cola.
   syncTimer = Timer.periodic(Duration(seconds: cfg.intervalSec), (_) async {
+    final wasOnline = sync.online;
+    final hadPending = await db.pendingCount() > 0;
     await sync.flush();
+    // Refrescar la pantalla aunque no llegue una posición nueva (p. ej. bajo techo, lecturas descartadas)
+    if (sync.online != wasOnline || hadPending) await publish();
   });
 
   // Si el stream deja de entregar posiciones (algunos fabricantes lo pausan), se fuerza una lectura.
   watchdog = Timer.periodic(const Duration(seconds: 30), (_) async {
     await readBattery();
-    if (DateTime.now().difference(lastFix).inSeconds > cfg.intervalSec * 4) {
+    if (DateTime.now().difference(lastFix).inSeconds > max(cfg.intervalSec * 4, 20)) {
       try {
         final pos = await Geolocator.getCurrentPosition(
           locationSettings: AndroidSettings(accuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 15)),
@@ -268,8 +280,8 @@ Future<void> onServiceStart(ServiceInstance service) async {
   });
 
   service.on('sos').listen((data) async {
-    final lat = (data?['lat'] as num?)?.toDouble() ?? lastPosition?.latitude;
-    final lng = (data?['lng'] as num?)?.toDouble() ?? lastPosition?.longitude;
+    final lat = (data?['lat'] as num?)?.toDouble() ?? lastFiltered?.lat;
+    final lng = (data?['lng'] as num?)?.toDouble() ?? lastFiltered?.lng;
     await db.enqueue('POST', '/api/alerts/sos', {'deviceId': cfg.deviceId, 'lat': lat, 'lng': lng});
     await sync.flush();
   });

@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../config.dart';
 import '../data/local_db.dart';
+import '../services/location_filter.dart';
 import '../services/telemetry.dart';
 import '../services/tracking_service.dart';
 import 'history_screen.dart';
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _route = <LatLng>[];
   LatLng? _me;
   double? _heading;
+  double? _accuracy; // m, margen de error que reporta el GPS
   bool _tracking = false;
   bool _busy = false;
   bool _follow = true;
@@ -33,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Map<String, dynamic> _t = {};
   StreamSubscription? _updatesSub;
   StreamSubscription<Position>? _uiPosSub;
+  final _uiFilter = LocationFilter();
   Timer? _clock;
 
   @override
@@ -96,13 +99,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return;
     _uiPosSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 5),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     ).listen((p) {
       if (_tracking || !mounted) return;
+      final fix = _uiFilter.add(
+          lat: p.latitude, lng: p.longitude, accuracy: p.accuracy,
+          ts: p.timestamp.millisecondsSinceEpoch, speed: p.speed, heading: p.heading);
+      if (fix == null) return;
       final first = _me == null;
       setState(() {
-        _me = LatLng(p.latitude, p.longitude);
+        _me = LatLng(fix.lat, fix.lng);
         _heading = p.heading;
+        _accuracy = p.accuracy;
       });
       if (first || _follow) _map.move(_me!, first ? 17 : _map.camera.zoom);
     });
@@ -120,6 +128,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (_route.isEmpty || _route.last != p) _route.add(p);
         _me = p;
         _heading = (data['heading'] as num?)?.toDouble();
+        _accuracy = (data['accuracy'] as num?)?.toDouble();
       }
     });
     if (_follow && _me != null) _map.move(_me!, _map.camera.zoom);
@@ -196,6 +205,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Polyline(points: _route, strokeWidth: 9, color: Colors.white),
                   Polyline(points: _route, strokeWidth: 5.5, color: Palette.primary),
                 ]),
+              if (_me != null && _accuracy != null)
+                CircleLayer(circles: [
+                  CircleMarker(
+                    point: _me!,
+                    radius: _accuracy!,
+                    useRadiusInMeter: true,
+                    color: Palette.primary.withValues(alpha: 0.12),
+                    borderColor: Palette.primary.withValues(alpha: 0.35),
+                    borderStrokeWidth: 1,
+                  ),
+                ]),
               if (_me != null)
                 MarkerLayer(markers: [
                   Marker(point: _me!, width: 44, height: 44, child: MyLocationDot(heading: _heading, active: _tracking)),
@@ -221,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Text('GeoTrack', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                        StatusLine(tracking: _tracking, online: online, pending: pending),
+                        StatusLine(tracking: _tracking, online: online, pending: pending, accuracy: _accuracy),
                       ],
                     ),
                   ),
